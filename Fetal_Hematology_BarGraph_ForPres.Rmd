@@ -1,0 +1,199 @@
+
+```{r include = FALSE}
+rm(list=ls())
+setwd("~/KayleeStuff/Smith_Lab/Data/Mouse_Validation_Data/Hematology")
+library(ggplot2)
+library(plotrix)
+library(dplyr)
+library(naniar) # to get rid of too high values if necessary
+library(extrafont)
+loadfonts(device = "win")
+```
+
+```{r Import file and rearrange by treatment to be alphabetical}
+File <- "AIN93G_Fetal_Mouse_Hematology_CLEAN.csv"
+data <- read.csv(File, header=TRUE) 
+data_frame <- data.frame(data)
+data_frame <- data_frame[order(data_frame$Treatment), ]
+```
+```{r echo = FALSE}
+print(data_frame)
+```
+```{r Prepare data for graphing}
+ActualGroupOrder <- c("CON", "PAE")
+NumPoints <- 9
+```
+
+# Fetal RBCs
+```{r, warning = FALSE, message = FALSE}
+Mean <- tapply(data_frame$RBC, as.character(data_frame$Treatment), mean, na.rm=TRUE) 
+Mean <- as.data.frame(rep(Mean, each = NumPoints)) 
+Mean$Treatment <- rep(ActualGroupOrder, each = NumPoints) 
+colnames(Mean)[1] <- "Mean" 
+
+Stdev <- tapply(data_frame$RBC, as.character(data_frame$Treatment), sd, na.rm=TRUE) 
+Stdev <- as.data.frame(rep(Stdev, each = NumPoints))
+Stdev$Treatment <- rep(ActualGroupOrder, each = NumPoints)
+colnames(Stdev)[1] <- "Stdev" 
+
+dataframe_combine <- cbind(Mean, Stdev, data_frame$RBC) 
+colnames(dataframe_combine)[5] <- "Value" 
+dataframe_combine <- dataframe_combine[-2] 
+
+dataframe_combine$Upper <- dataframe_combine$Mean + dataframe_combine$Stdev #upper error
+dataframe_combine$Lower <- dataframe_combine$Mean - dataframe_combine$Stdev #lower error
+
+#Make Graph#
+png("Fetal_RBCs_ForPres.png", units="in", width=4, height=7, res=600) 
+
+sets <- c("CON", "PAE")
+
+p<- ggplot(dataframe_combine, aes(x=Treatment, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Treatment),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("CON" = "#BDB8AD",
+                             "PAE" = "#EBE7E0"
+                             )) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Treatment, y=Value),
+             size = 2, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,4)) +
+  ggtitle("Fetal RBCs") +
+  ylab(expression("Red blood cell count (x10^6 cells/μL)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18, family = "Times New Roman"), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 24, family = "Times New Roman"),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=22, color = "black", family = "Times New Roman"), #sets size of x and y axis labels
+        axis.text.x=element_text(family = "Times New Roman"),
+        axis.title=element_text(size=22,face="bold", family = "Times New Roman")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Fetal RBC, echo = FALSE}
+print(p)
+```
+
+# Fetal HGB
+```{r, warning = FALSE, message = FALSE}
+Mean <- tapply(data_frame$HGB, as.character(data_frame$Treatment), mean, na.rm=TRUE) 
+Mean <- as.data.frame(rep(Mean, each = NumPoints)) 
+Mean$Treatment <- rep(ActualGroupOrder, each = NumPoints) 
+colnames(Mean)[1] <- "Mean" 
+
+Stdev <- tapply(data_frame$HGB, as.character(data_frame$Treatment), sd, na.rm=TRUE) 
+Stdev <- as.data.frame(rep(Stdev, each = NumPoints))
+Stdev$Treatment <- rep(ActualGroupOrder, each = NumPoints)
+colnames(Stdev)[1] <- "Stdev" 
+
+dataframe_combine <- cbind(Mean, Stdev, data_frame$HGB) 
+colnames(dataframe_combine)[5] <- "Value" 
+dataframe_combine <- dataframe_combine[-2] 
+
+dataframe_combine$Upper <- dataframe_combine$Mean + dataframe_combine$Stdev #upper error
+dataframe_combine$Lower <- dataframe_combine$Mean - dataframe_combine$Stdev #lower error
+
+#Make Graph#
+png("Fetal_HGB_ForPres.png", units="in", width=4, height=7, res=600) 
+
+sets <- c("CON", "PAE")
+
+p<- ggplot(dataframe_combine, aes(x=Treatment, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Treatment),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("CON" = "#BDB8AD",
+                             "PAE" = "#EBE7E0"
+                             )) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Treatment, y=Value),
+             size = 2, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,15)) +
+  ggtitle("Fetal HGB") +
+  ylab(expression("Hemoglobin (g/dL)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18, family = "Times New Roman"), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 24, family = "Times New Roman"),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=22, color = "black", family = "Times New Roman"), #sets size of x and y axis labels
+        axis.text.x=element_text(family = "Times New Roman"),
+        axis.title=element_text(size=22,face="bold", family = "Times New Roman")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Fetal RBC, echo = FALSE}
+print(p)
+```
+
+# Fetal HCT
+```{r, warning = FALSE, message = FALSE}
+Mean <- tapply(data_frame$HCT, as.character(data_frame$Treatment), mean, na.rm=TRUE) 
+Mean <- as.data.frame(rep(Mean, each = NumPoints)) 
+Mean$Treatment <- rep(ActualGroupOrder, each = NumPoints) 
+colnames(Mean)[1] <- "Mean" 
+
+Stdev <- tapply(data_frame$HCT, as.character(data_frame$Treatment), sd, na.rm=TRUE) 
+Stdev <- as.data.frame(rep(Stdev, each = NumPoints))
+Stdev$Treatment <- rep(ActualGroupOrder, each = NumPoints)
+colnames(Stdev)[1] <- "Stdev" 
+
+dataframe_combine <- cbind(Mean, Stdev, data_frame$HCT) 
+colnames(dataframe_combine)[5] <- "Value" 
+dataframe_combine <- dataframe_combine[-2] 
+
+dataframe_combine$Upper <- dataframe_combine$Mean + dataframe_combine$Stdev #upper error
+dataframe_combine$Lower <- dataframe_combine$Mean - dataframe_combine$Stdev #lower error
+
+#Make Graph#
+png("Fetal_HCT_ForPres.png", units="in", width=4, height=7, res=600) 
+
+sets <- c("CON", "PAE")
+
+p<- ggplot(dataframe_combine, aes(x=Treatment, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Treatment),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("CON" = "#BDB8AD",
+                             "PAE" = "#EBE7E0"
+                             )) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Treatment, y=Value),
+             size = 2, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,50)) +
+  ggtitle("Fetal HCT") +
+  ylab(expression("Hematocrit (%)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18, family = "Times New Roman"), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 24, family = "Times New Roman"),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=22, color = "black", family = "Times New Roman"), #sets size of x and y axis labels
+        axis.text.x=element_text(family = "Times New Roman"),
+        axis.title=element_text(size=22,face="bold", family = "Times New Roman")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Fetal RBC, echo = FALSE}
+print(p)
+```
+
+# Session Information
+```{r, echo = FALSE}
+session_info <- devtools::session_info()
+print(session_info)
+```

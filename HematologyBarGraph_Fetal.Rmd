@@ -1,0 +1,594 @@
+---
+title: "Fetal Mouse Hematology Data AIN93G"
+author: "Kaylee Helfrich"
+date: "2/19/2020"
+output: 
+  pdf_document: default
+  html_document: default
+data: AIN93G_Fetal_Mouse_Hematology_CLEAN.csv
+---
+
+Built with R `r getRversion()`
+
+```{r RMarkdown setup, include = FALSE, message = FALSE}
+require(knitr)
+knitr::opts_chunk$set(echo = TRUE, tidy.opts=list(width.cutoff=60), tidy=TRUE)
+knitr::opts_knit$set(root.dir = "~/KayleeStuff/Smith_Lab/Data/Mouse_Validation_Data/Hematology")
+options(tinytex.verbose = TRUE)
+```
+
+# Graphing of CBCs
+This document details my graphing of the hematology data from fetal CBCs. These litters were collected in the fall of 2019 by Brandon Presswood, Dane Ricketts, Olivia Rivera, and Katie Walter. The design was the standard design that we use, with 3.0g/kg ethanol from GD8.5-17.5 or 80% isocaloric maltodextrin. All dams consumed AIN-93G diet from 3 weeks prior to pregnancy through pregnancy and collection. Tissues were harvested on GD17.5, 4 hours after the final dose. Blood was collected from the fetuses by decapitation and heparin collection on the inverted fetal trunk. Blood was pooled across the litter. The blood was run using the diluted mode on the pochi analyzer. All graphs are mean with standard deviation, since there are not multiple measures per dot.
+
+```{r include = FALSE}
+rm(list=ls())
+setwd("~/KayleeStuff/Smith_Lab/Data/Mouse_Validation_Data/Hematology")
+library(ggplot2)
+library(plotrix)
+```
+
+```{r Import file}
+File <- "AIN93G_Fetal_Mouse_Hematology_CLEAN.csv"
+data <- read.csv(File, header=TRUE) 
+data_frame <- data.frame(data)
+```
+```{r echo = FALSE}
+print(head(data_frame))
+```
+
+```{r Separate out data by Exposure}
+MD <- data_frame[is.element(data_frame$Treatment, "MD"),]
+Alc <- data_frame[is.element(data_frame$Treatment, "PAE"),]
+```
+```{r echo = FALSE}
+print(head(MD))
+print(head(Alc))
+```
+
+# White Blood Cells
+## All code is included for this first example, but thereafter, only the heading and graphs are shown. For all graphs, all data is graphed unless mentioned otherwise. 
+```{r}
+#MD#
+MD_WBCs <- data.frame(MD$WBC)
+MD_WBCs$Mean <- mean(MD_WBCs$MD.WBC, na.rm=TRUE)
+MD_WBCs$Stdev <- sd(MD_WBCs$MD.WBC, na.rm=TRUE)
+MD_WBCs$Lower <- (MD_WBCs$Mean - MD_WBCs$Stdev)
+MD_WBCs$Upper <- (MD_WBCs$Mean + MD_WBCs$Stdev)
+MD_WBCs$Group <- "MD"
+colnames(MD_WBCs)[1] <- "Value"
+MD_WBCs <- MD_WBCs[,c(6, 1, 2, 3, 4, 5)]
+
+#Alc#
+Alc_WBCs <- data.frame(Alc$WBC)
+Alc_WBCs$Mean <- mean(Alc_WBCs$Alc.WBC, na.rm=TRUE)
+Alc_WBCs$Stdev <- sd(Alc_WBCs$Alc.WBC, na.rm=TRUE)
+Alc_WBCs$Lower <- (Alc_WBCs$Mean - Alc_WBCs$Stdev)
+Alc_WBCs$Upper <- (Alc_WBCs$Mean + Alc_WBCs$Stdev)
+Alc_WBCs$Group <- "PAE"
+colnames(Alc_WBCs)[1] <- "Value"
+Alc_WBCs <- Alc_WBCs[,c(6, 1, 2, 3, 4, 5)]
+
+#CombineTables#
+dataframe_Fet_WBCs_Combined <- rbind(MD_WBCs, Alc_WBCs)
+
+#Make Graph#
+png("Fetal_WBCs_Dotplot.png", units="in", width=7, height=7, res=600) 
+
+sets <- c("MD", "PAE")
+
+p<- ggplot(dataframe_Fet_WBCs_Combined, aes(x=Group, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Group),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("MD" = "#0000CC", "PAE" = "#6699FF")) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Group, y=Value),
+             size = 1.25, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,10)) +
+  ggtitle("Fetal WBCs") +
+  ylab(expression("Fetal WBCs (x10^3 cells/uL)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 16),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=18, color = "black"), #sets size of x and y axis labels
+        axis.text.x=element_text(angle = 45, vjust = .95, hjust = 0.9),
+        axis.title=element_text(size=20,face="bold")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r White Blood Cells, echo = FALSE}
+print(p)
+```
+
+# Red Blood Cells
+```{r, echo = FALSE}
+#MD#
+MD_RBCs <- data.frame(MD$RBC)
+MD_RBCs$Mean <- mean(MD_RBCs$MD.RBC, na.rm=TRUE)
+MD_RBCs$Stdev <- sd(MD_RBCs$MD.RBC, na.rm=TRUE)
+MD_RBCs$Lower <- (MD_RBCs$Mean - MD_RBCs$Stdev)
+MD_RBCs$Upper <- (MD_RBCs$Mean + MD_RBCs$Stdev)
+MD_RBCs$Group <- "MD"
+colnames(MD_RBCs)[1] <- "Value"
+MD_RBCs <- MD_RBCs[,c(6, 1, 2, 3, 4, 5)]
+
+#Alc#
+Alc_RBCs <- data.frame(Alc$RBC)
+Alc_RBCs$Mean <- mean(Alc_RBCs$Alc.RBC, na.rm=TRUE)
+Alc_RBCs$Stdev <- sd(Alc_RBCs$Alc.RBC, na.rm=TRUE)
+Alc_RBCs$Lower <- (Alc_RBCs$Mean - Alc_RBCs$Stdev)
+Alc_RBCs$Upper <- (Alc_RBCs$Mean + Alc_RBCs$Stdev)
+Alc_RBCs$Group <- "PAE"
+colnames(Alc_RBCs)[1] <- "Value"
+Alc_RBCs <- Alc_RBCs[,c(6, 1, 2, 3, 4, 5)]
+
+#CombineTables#
+dataframe_Fet_RBCs_Combined <- rbind(MD_RBCs, Alc_RBCs)
+
+#Make Graph#
+png("Fetal_RBCs_Dotplot.png", units="in", width=7, height=7, res=600) 
+
+sets <- c("MD", "PAE")
+
+p<- ggplot(dataframe_Fet_RBCs_Combined, aes(x=Group, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Group),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("MD" = "#0000CC", "PAE" = "#6699FF")) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Group, y=Value),
+             size = 1.25, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,4)) +
+  ggtitle("Fetal RBCs") +
+  ylab(expression("Fetal RBCs (x10^6 cells/uL)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 16),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=18, color = "black"), #sets size of x and y axis labels
+        axis.text.x=element_text(angle = 45, vjust = .95, hjust = 0.9),
+        axis.title=element_text(size=20,face="bold")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Red Blood Cells, echo = FALSE}
+print(p)
+```
+
+# Hemoglobin
+```{r echo = FALSE}
+#MD#
+MD_HGB <- data.frame(MD$HGB)
+MD_HGB$Mean <- mean(MD_HGB$MD.HGB, na.rm=TRUE)
+MD_HGB$Stdev <- sd(MD_HGB$MD.HGB, na.rm=TRUE)
+MD_HGB$Lower <- (MD_HGB$Mean - MD_HGB$Stdev)
+MD_HGB$Upper <- (MD_HGB$Mean + MD_HGB$Stdev)
+MD_HGB$Group <- "MD"
+colnames(MD_HGB)[1] <- "Value"
+MD_HGB <- MD_HGB[,c(6, 1, 2, 3, 4, 5)]
+
+#Alc#
+Alc_HGB <- data.frame(Alc$HGB)
+Alc_HGB$Mean <- mean(Alc_HGB$Alc.HGB, na.rm=TRUE)
+Alc_HGB$Stdev <- sd(Alc_HGB$Alc.HGB, na.rm=TRUE)
+Alc_HGB$Lower <- (Alc_HGB$Mean - Alc_HGB$Stdev)
+Alc_HGB$Upper <- (Alc_HGB$Mean + Alc_HGB$Stdev)
+Alc_HGB$Group <- "PAE"
+colnames(Alc_HGB)[1] <- "Value"
+Alc_HGB <- Alc_HGB[,c(6, 1, 2, 3, 4, 5)]
+
+#CombineTables#
+dataframe_Fet_HGB_Combined <- rbind(MD_HGB, Alc_HGB)
+
+#Make Graph#
+png("Fetal_Hemoglobin_Dotplot.png", units="in", width=7, height=7, res=600) 
+
+sets <- c("MD", "PAE")
+
+p<- ggplot(dataframe_Fet_HGB_Combined, aes(x=Group, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Group),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("MD" = "#0000CC", "PAE" = "#6699FF")) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Group, y=Value),
+             size = 1.25, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,15)) +
+  ggtitle("Fetal Hemoglobin") +
+  ylab(expression("Fetal Hemoglobin (g/dL)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 16),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=18, color = "black"), #sets size of x and y axis labels
+        axis.text.x=element_text(angle = 45, vjust = .95, hjust = 0.9),
+        axis.title=element_text(size=20,face="bold")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Hemoglobin, echo = FALSE}
+print(p)
+```
+
+# Hematocrit
+```{r, echo = FALSE}
+#MD#
+MD_HCT <- data.frame(MD$HCT)
+MD_HCT$Mean <- mean(MD_HCT$MD.HCT, na.rm=TRUE)
+MD_HCT$Stdev <- sd(MD_HCT$MD.HCT, na.rm=TRUE)
+MD_HCT$Lower <- (MD_HCT$Mean - MD_HCT$Stdev)
+MD_HCT$Upper <- (MD_HCT$Mean + MD_HCT$Stdev)
+MD_HCT$Group <- "MD"
+colnames(MD_HCT)[1] <- "Value"
+MD_HCT <- MD_HCT[,c(6, 1, 2, 3, 4, 5)]
+
+#Alc#
+Alc_HCT <- data.frame(Alc$HCT)
+Alc_HCT$Mean <- mean(Alc_HCT$Alc.HCT, na.rm=TRUE)
+Alc_HCT$Stdev <- sd(Alc_HCT$Alc.HCT, na.rm=TRUE)
+Alc_HCT$Lower <- (Alc_HCT$Mean - Alc_HCT$Stdev)
+Alc_HCT$Upper <- (Alc_HCT$Mean + Alc_HCT$Stdev)
+Alc_HCT$Group <- "PAE"
+colnames(Alc_HCT)[1] <- "Value"
+Alc_HCT <- Alc_HCT[,c(6, 1, 2, 3, 4, 5)]
+
+#CombineTables#
+dataframe_Fet_HCT_Combined <- rbind(MD_HCT, Alc_HCT)
+
+#Make Graph#
+png("Fetal_Hematocrit_Dotplot.png", units="in", width=7, height=7, res=600) 
+
+sets <- c("MD", "PAE")
+
+p<- ggplot(dataframe_Fet_HCT_Combined, aes(x=Group, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Group),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("MD" = "#0000CC", "PAE" = "#6699FF")) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Group, y=Value),
+             size = 1.25, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,50)) +
+  ggtitle("Fetal Hematocrit") +
+  ylab(expression("Fetal Hematocrit (%)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 16),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=18, color = "black"), #sets size of x and y axis labels
+        axis.text.x=element_text(angle = 45, vjust = .95, hjust = 0.9),
+        axis.title=element_text(size=20,face="bold")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off()
+```
+```{r Hematocrit, echo = FALSE}
+print(p)
+```
+
+# Mean Cell Volume
+```{r, echo = FALSE}
+#MD#
+MD_MCV <- data.frame(MD$MCV)
+MD_MCV$Mean <- mean(MD_MCV$MD.MCV, na.rm=TRUE)
+MD_MCV$Stdev <- sd(MD_MCV$MD.MCV, na.rm=TRUE)
+MD_MCV$Lower <- (MD_MCV$Mean - MD_MCV$Stdev)
+MD_MCV$Upper <- (MD_MCV$Mean + MD_MCV$Stdev)
+MD_MCV$Group <- "MD"
+colnames(MD_MCV)[1] <- "Value"
+MD_MCV <- MD_MCV[,c(6, 1, 2, 3, 4, 5)]
+
+#Alc#
+Alc_MCV <- data.frame(Alc$MCV)
+Alc_MCV$Mean <- mean(Alc_MCV$Alc.MCV, na.rm=TRUE)
+Alc_MCV$Stdev <- sd(Alc_MCV$Alc.MCV, na.rm=TRUE)
+Alc_MCV$Lower <- (Alc_MCV$Mean - Alc_MCV$Stdev)
+Alc_MCV$Upper <- (Alc_MCV$Mean + Alc_MCV$Stdev)
+Alc_MCV$Group <- "PAE"
+colnames(Alc_MCV)[1] <- "Value"
+Alc_MCV <- Alc_MCV[,c(6, 1, 2, 3, 4, 5)]
+
+#CombineTables#
+dataframe_Fet_MCV_Combined <- rbind(MD_MCV, Alc_MCV)
+
+#Make Graph#
+png("Fetal_MeanCellVolume_Dotplot.png", units="in", width=7, height=7, res=600) 
+
+sets <- c("MD", "PAE")
+
+p<- ggplot(dataframe_Fet_MCV_Combined, aes(x=Group, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Group),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("MD" = "#0000CC", "PAE" = "#6699FF")) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Group, y=Value),
+             size = 1.25, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,150)) +
+  ggtitle("Fetal Mean Cell Volume") +
+  ylab(expression("Fetal MCV (fL)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 16),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=18, color = "black"), #sets size of x and y axis labels
+        axis.text.x=element_text(angle = 45, vjust = .95, hjust = 0.9),
+        axis.title=element_text(size=20,face="bold")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Mean Cell Volume, echo = FALSE}
+print(p)
+```
+
+# Mean Cell Hemoglobin
+```{r, echo = FALSE}
+#MD#
+MD_MCH <- data.frame(MD$MCH)
+MD_MCH$Mean <- mean(MD_MCH$MD.MCH, na.rm=TRUE)
+MD_MCH$Stdev <- sd(MD_MCH$MD.MCH, na.rm=TRUE)
+MD_MCH$Lower <- (MD_MCH$Mean - MD_MCH$Stdev)
+MD_MCH$Upper <- (MD_MCH$Mean + MD_MCH$Stdev)
+MD_MCH$Group <- "MD"
+colnames(MD_MCH)[1] <- "Value"
+MD_MCH <- MD_MCH[,c(6, 1, 2, 3, 4, 5)]
+
+#Alc#
+Alc_MCH <- data.frame(Alc$MCH)
+Alc_MCH$Mean <- mean(Alc_MCH$Alc.MCH, na.rm=TRUE)
+Alc_MCH$Stdev <- sd(Alc_MCH$Alc.MCH, na.rm=TRUE)
+Alc_MCH$Lower <- (Alc_MCH$Mean - Alc_MCH$Stdev)
+Alc_MCH$Upper <- (Alc_MCH$Mean + Alc_MCH$Stdev)
+Alc_MCH$Group <- "PAE"
+colnames(Alc_MCH)[1] <- "Value"
+Alc_MCH <- Alc_MCH[,c(6, 1, 2, 3, 4, 5)]
+
+#CombineTables#
+dataframe_Fet_MCH_Combined <- rbind(MD_MCH, Alc_MCH)
+
+#Make Graph#
+png("Fetal_MeanCellHemoglobin_Dotplot.png", units="in", width=7, height=7, res=600) 
+
+sets <- c("MD", "PAE")
+
+p<- ggplot(dataframe_Fet_MCH_Combined, aes(x=Group, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Group),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("MD" = "#0000CC", "PAE" = "#6699FF")) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Group, y=Value),
+             size = 1.25, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,40)) +
+  ggtitle("Fetal Mean Cell Hemoglobin") +
+  ylab(expression("Fetal MCH (pg)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 16),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=18, color = "black"), #sets size of x and y axis labels
+        axis.text.x=element_text(angle = 45, vjust = .95, hjust = 0.9),
+        axis.title=element_text(size=20,face="bold")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Mean Cell Hemoglobin, echo = FALSE}
+print(p)
+```
+
+# Mean Cell Hemoglobin Concentration 
+```{r, echo = FALSE}
+#MD#
+MD_MCHC <- data.frame(MD$MCHC)
+MD_MCHC$Mean <- mean(MD_MCHC$MD.MCHC, na.rm=TRUE)
+MD_MCHC$Stdev <- sd(MD_MCHC$MD.MCHC, na.rm=TRUE)
+MD_MCHC$Lower <- (MD_MCHC$Mean - MD_MCHC$Stdev)
+MD_MCHC$Upper <- (MD_MCHC$Mean + MD_MCHC$Stdev)
+MD_MCHC$Group <- "MD"
+colnames(MD_MCHC)[1] <- "Value"
+MD_MCHC <- MD_MCHC[,c(6, 1, 2, 3, 4, 5)]
+
+#Alc#
+Alc_MCHC <- data.frame(Alc$MCHC)
+Alc_MCHC$Mean <- mean(Alc_MCHC$Alc.MCHC, na.rm=TRUE)
+Alc_MCHC$Stdev <- sd(Alc_MCHC$Alc.MCHC, na.rm=TRUE)
+Alc_MCHC$Lower <- (Alc_MCHC$Mean - Alc_MCHC$Stdev)
+Alc_MCHC$Upper <- (Alc_MCHC$Mean + Alc_MCHC$Stdev)
+Alc_MCHC$Group <- "PAE"
+colnames(Alc_MCHC)[1] <- "Value"
+Alc_MCHC <- Alc_MCHC[,c(6, 1, 2, 3, 4, 5)]
+
+#CombineTables#
+dataframe_Fet_MCHC_Combined <- rbind(MD_MCHC, Alc_MCHC)
+
+#Make Graph#
+png("Fetal_MeanCellHemoglobinConcentration_Dotplot.png", units="in", width=7, height=7, res=600) 
+
+sets <- c("MD", "PAE")
+
+p<- ggplot(dataframe_Fet_MCHC_Combined, aes(x=Group, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Group),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("MD" = "#0000CC", "PAE" = "#6699FF")) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Group, y=Value),
+             size = 1.25, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,30)) +
+  ggtitle("Fetal Mean Cell Hemoglobin Concentration") +
+  ylab(expression("Fetal MCHC (g/dL)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 16),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=18, color = "black"), #sets size of x and y axis labels
+        axis.text.x=element_text(angle = 45, vjust = .95, hjust = 0.9),
+        axis.title=element_text(size=20,face="bold")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Mean Cell Hemoglobin Concentration, echo = FALSE}
+print(p)
+```
+
+# Platelets
+```{r, echo = FALSE}
+#MD#
+MD_PLT <- data.frame(MD$PLT)
+MD_PLT$Mean <- mean(MD_PLT$MD.PLT, na.rm=TRUE)
+MD_PLT$Stdev <- sd(MD_PLT$MD.PLT, na.rm=TRUE)
+MD_PLT$Lower <- (MD_PLT$Mean - MD_PLT$Stdev)
+MD_PLT$Upper <- (MD_PLT$Mean + MD_PLT$Stdev)
+MD_PLT$Group <- "MD"
+colnames(MD_PLT)[1] <- "Value"
+MD_PLT <- MD_PLT[,c(6, 1, 2, 3, 4, 5)]
+
+#Alc#
+Alc_PLT <- data.frame(Alc$PLT)
+Alc_PLT$Mean <- mean(Alc_PLT$Alc.PLT, na.rm=TRUE)
+Alc_PLT$Stdev <- sd(Alc_PLT$Alc.PLT, na.rm=TRUE)
+Alc_PLT$Lower <- (Alc_PLT$Mean - Alc_PLT$Stdev)
+Alc_PLT$Upper <- (Alc_PLT$Mean + Alc_PLT$Stdev)
+Alc_PLT$Group <- "PAE"
+colnames(Alc_PLT)[1] <- "Value"
+Alc_PLT <- Alc_PLT[,c(6, 1, 2, 3, 4, 5)]
+
+#CombineTables#
+dataframe_Fet_PLT_Combined <- rbind(MD_PLT, Alc_PLT)
+
+#Make Graph#
+png("Fetal_Platelets_Dotplot.png", units="in", width=7, height=7, res=600) 
+
+sets <- c("MD", "PAE")
+
+p<- ggplot(dataframe_Fet_PLT_Combined, aes(x=Group, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Group),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("MD" = "#0000CC", "PAE" = "#6699FF")) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Group, y=Value),
+             size = 1.25, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,125)) +
+  ggtitle("Fetal Platelets") +
+  ylab(expression("Fetal PLT (x10^3 platelets/uL)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 16),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=18, color = "black"), #sets size of x and y axis labels
+        axis.text.x=element_text(angle = 45, vjust = .95, hjust = 0.9),
+        axis.title=element_text(size=20,face="bold")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Platelets, echo = FALSE}
+print(p)
+```
+
+# Zinc Protoporphyrin
+## The missing values listed here are from samples where there was not enough blood to run zinc protoporphyrin, but these samples do have data for the rest of the measures, so they were included.
+```{r, echo = FALSE}
+#MD#
+MD_ZnPP <- data.frame(MD$ZnPP)
+MD_ZnPP$Mean <- mean(MD_ZnPP$MD.ZnPP, na.rm=TRUE)
+MD_ZnPP$Stdev <- sd(MD_ZnPP$MD.ZnPP, na.rm=TRUE)
+MD_ZnPP$Lower <- (MD_ZnPP$Mean - MD_ZnPP$Stdev)
+MD_ZnPP$Upper <- (MD_ZnPP$Mean + MD_ZnPP$Stdev)
+MD_ZnPP$Group <- "MD"
+colnames(MD_ZnPP)[1] <- "Value"
+MD_ZnPP <- MD_ZnPP[,c(6, 1, 2, 3, 4, 5)]
+
+#Alc#
+Alc_ZnPP <- data.frame(Alc$ZnPP)
+Alc_ZnPP$Mean <- mean(Alc_ZnPP$Alc.ZnPP, na.rm=TRUE)
+Alc_ZnPP$Stdev <- sd(Alc_ZnPP$Alc.ZnPP, na.rm=TRUE)
+Alc_ZnPP$Lower <- (Alc_ZnPP$Mean - Alc_ZnPP$Stdev)
+Alc_ZnPP$Upper <- (Alc_ZnPP$Mean + Alc_ZnPP$Stdev)
+Alc_ZnPP$Group <- "PAE"
+colnames(Alc_ZnPP)[1] <- "Value"
+Alc_ZnPP <- Alc_ZnPP[,c(6, 1, 2, 3, 4, 5)]
+
+#CombineTables#
+dataframe_Fet_ZnPP_Combined <- rbind(MD_ZnPP, Alc_ZnPP)
+
+#Make Graph#
+png("Fetal_ZincProtoporphyrin_Dotplot.png", units="in", width=7, height=7, res=600) 
+
+sets <- c("MD", "PAE")
+
+p<- ggplot(dataframe_Fet_ZnPP_Combined, aes(x=Group, y=Mean)) + 
+  geom_bar(stat="identity", color="black", aes(fill = Group),
+           position=position_dodge()) +
+  scale_fill_manual(values=c("MD" = "#0000CC", "PAE" = "#6699FF")) +
+  geom_errorbar(aes(ymin=Lower, ymax=Upper), width=.2,
+                position=position_dodge(.9)) + 
+  geom_point(aes(x=Group, y=Value),
+             size = 1.25, shape = 19, position = position_jitter(width=.15, height=0.1)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0,500)) +
+  ggtitle("Fetal Zinc Protoporphyrin") +
+  ylab(expression("Fetal ZnPP (umol ZnPP/mol heme)")) + 
+  theme(plot.title = element_text(hjust = 0.5, size=18), 
+        axis.title.x = element_blank(), #gets rid of x-axis label
+        axis.title.y = element_text(size = 16),
+        panel.grid.major = element_blank(), #gets rid of major gridlines
+        panel.grid.minor = element_blank(), #gets rid of minor gridlines
+        panel.background = element_blank(), #turns background white instead of gray
+        axis.line = element_line(colour = "black"), 
+        legend.position="none", #gets rid of legend
+        axis.text=element_text(size=18, color = "black"), #sets size of x and y axis labels
+        axis.text.x=element_text(angle = 45, vjust = .95, hjust = 0.9),
+        axis.title=element_text(size=20,face="bold")) + 
+  scale_x_discrete (limits = sets)
+print(p)
+dev.off() 
+```
+```{r Zinc Protoporphyrin, echo = FALSE}
+print(p)
+```
+
+# Session Information
+```{r, echo = FALSE}
+session_info <- devtools::session_info()
+print(session_info)
+```
